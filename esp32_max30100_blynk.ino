@@ -1,45 +1,21 @@
-/*
-  Optical Heart Rate Detection (PBA Algorithm) using the MAX30105 Breakout
-  By: Nathan Seidle @ SparkFun Electronics
-  Date: October 2nd, 2016
-  https://github.com/sparkfun/MAX30105_Breakout
-
-  This is a demo to show the reading of heart rate or beats per minute (BPM) using
-  a Penpheral Beat Amplitude (PBA) algorithm.
-
-  It is best to attach the sensor to your finger using a rubber band or other tightening
-  device. Humans are generally bad at applying constant pressure to a thing. When you
-  press your finger against the sensor it varies enough to cause the blood in your
-  finger to flow differently which causes the sensor readings to go wonky.
-
-  Hardware Connections (Breakoutboard to Arduino):
-  -5V = 5V (3.3V is allowed)
-  -GND = GND
-  -SDA = A4 (or SDA)
-  -SCL = A5 (or SCL)
-  -INT = Not connected
-
-  The MAX30105 Breakout can handle 5V or 3.3V I2C logic. We recommend powering the board with 5V
-  but it will also run at 3.3V.
-*/
-
 #include <Wire.h>
 #include "MAX30105.h"
-
-#include "heartRate.h"
-
-
-#define BLYNK_PRINT Serial
-
-#define BLYNK_USE_DIRECT_CONNECT
-
 #include <BlynkSimpleEsp32_BLE.h>
 #include <BLEDevice.h>
 #include <BLEServer.h>
+#include "heartRate.h"
+#include <Adafruit_Sensor.h>
+#include <DHT.h>
+
+
+#define BLYNK_PRINT Serial
+#define BLYNK_USE_DIRECT_CONNECT
+#define DHTPIN 4
+#define DHTTYPE DHT11
+
 char auth[] = "c-HgFsEu8BcZq3quB0_vLir6_6i-Pxkw";
 int pin=15;
 float val;
-//JoseDefines
 float beatsuma=0.0;
 float beatprom = 0;
 int cont;
@@ -47,27 +23,14 @@ const int intervalo=1000;
 unsigned long milisactuales = millis();
 unsigned long anteriores=0;
 int pin1Value = 0;
-
-MAX30105 particleSensor;
-
-const byte RATE_SIZE = 4; //Increase this for more averaging. 4 is good.
-byte rates[RATE_SIZE]; //Array of heart rates
+const byte RATE_SIZE = 4; 
+byte rates[RATE_SIZE]; 
 byte rateSpot = 0;
-long lastBeat = 0; //Time at which the last beat occurred
-
+long lastBeat = 0; 
 float beatsPerMinute;
 int beatAvg;
 
-#include <Adafruit_Sensor.h>
-
-#include <DHT.h>
- 
-// Definimos el pin digital donde se conecta el sensor
-#define DHTPIN 4
-// Dependiendo del tipo de sensor
-#define DHTTYPE DHT11
- 
-// Inicializamos el sensor DHT11
+MAX30105 particleSensor;
 DHT dht(DHTPIN, DHTTYPE);
 
 BLYNK_WRITE(V1)
@@ -78,16 +41,15 @@ BLYNK_WRITE(V1)
 void setup()
 {
   Serial.begin(9600);
-    dht.begin();
-  // Initialize sensor
+  dht.begin();
   if (!particleSensor.begin(Wire, I2C_SPEED_FAST)) //Use default I2C port, 400kHz speed
   {
     while (1);
   }
 
-  particleSensor.setup(); //Configure sensor with default settings
-  particleSensor.setPulseAmplitudeRed(0x0A); //Turn Red LED to low to indicate sensor is running
-  particleSensor.setPulseAmplitudeGreen(0); //Turn off Green LED
+  particleSensor.setup(); 
+  particleSensor.setPulseAmplitudeRed(0x0A); 
+  particleSensor.setPulseAmplitudeGreen(0); 
 
   Blynk.setDeviceName("Blynk");
 
@@ -100,7 +62,6 @@ void loop()
 
   if (checkForBeat(irValue) == true)
   {
-    //We sensed a beat!
     long delta = millis() - lastBeat;
     lastBeat = millis();
 
@@ -116,7 +77,6 @@ void loop()
 
     if (checkForBeat(irValue) == true)
     {
-    //We sensed a beat!
     long delta = millis() - lastBeat;
     lastBeat = millis();
 
